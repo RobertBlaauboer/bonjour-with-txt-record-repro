@@ -12,6 +12,7 @@
 		A1000003000000000000001 /* ServiceBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003000000000000001 /* ServiceBrowser.swift */; };
 		A1000004000000000000001 /* DiscoveredService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004000000000000001 /* DiscoveredService.swift */; };
 		A1000005000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000005000000000000001 /* Assets.xcassets */; };
+		A1000006000000000000001 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007000000000000001 /* Logger.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		A2000004000000000000001 /* DiscoveredService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveredService.swift; sourceTree = "<group>"; };
 		A2000005000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000006000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A2000007000000000000001 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +51,7 @@
 				A2000001000000000000001 /* BonjourServiceBrowserApp.swift */,
 				A2000002000000000000001 /* ContentView.swift */,
 				A2000003000000000000001 /* ServiceBrowser.swift */,
+				A2000007000000000000001 /* Logger.swift */,
 				A5000004000000000000001 /* Models */,
 				A2000005000000000000001 /* Assets.xcassets */,
 				A2000006000000000000001 /* Info.plist */,
@@ -145,6 +148,7 @@
 				A1000002000000000000001 /* ContentView.swift in Sources */,
 				A1000003000000000000001 /* ServiceBrowser.swift in Sources */,
 				A1000004000000000000001 /* DiscoveredService.swift in Sources */,
+				A1000006000000000000001 /* Logger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

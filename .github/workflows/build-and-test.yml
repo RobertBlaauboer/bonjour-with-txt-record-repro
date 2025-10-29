@@ -78,13 +78,46 @@ jobs:
         fi
         sleep 10
 
+    - name: Retrieve app log file
+      if: always()
+      run: |
+        echo "Retrieving app log file from simulator..."
+        APP_CONTAINER=$(xcrun simctl get_app_container "$DEVICE_ID" com.example.BonjourServiceBrowser data)
+        LOG_FILE="$APP_CONTAINER/Documents/bonjour_service_browser.log"
+
+        if [ -f "$LOG_FILE" ]; then
+          echo "Log file found at: $LOG_FILE"
+          mkdir -p logs
+          cp "$LOG_FILE" logs/bonjour_service_browser.log
+          echo "Log file copied to logs directory"
+
+          echo "=== Application Log Contents ==="
+          cat "$LOG_FILE"
+          echo "=== End of Application Log ==="
+        else
+          echo "Warning: Log file not found at $LOG_FILE"
+          echo "APP_CONTAINER: $APP_CONTAINER"
+          ls -la "$APP_CONTAINER/Documents/" || echo "Documents directory not found"
+        fi
+
     - name: Show dns-sd logs
       if: always()
       run: |
         if [ -f dns-sd.log ]; then
-          echo "dns-sd logs:"
+          echo "=== dns-sd Logs ==="
           cat dns-sd.log
+          echo "=== End of dns-sd Logs ==="
         fi
+
+    - name: Upload logs as artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-logs
+        path: |
+          logs/
+          dns-sd.log
+        if-no-files-found: warn
 
     - name: Shutdown simulator
       if: always()

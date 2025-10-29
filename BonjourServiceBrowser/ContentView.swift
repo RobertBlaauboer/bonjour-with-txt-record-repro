@@ -17,6 +17,12 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Bonjour Services")
+            .onAppear {
+                Logger.shared.log("ContentView appeared", level: .info)
+            }
+            .onChange(of: serviceBrowser.discoveredServices.count) { newValue in
+                Logger.shared.log("Service count changed to: \(newValue)", level: .info)
+            }
         }
     }
 }

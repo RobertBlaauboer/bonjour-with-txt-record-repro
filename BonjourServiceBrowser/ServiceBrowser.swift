@@ -9,35 +9,45 @@ class ServiceBrowser: ObservableObject {
     private let serviceType = "_test._tcp"
 
     init() {
+        Logger.shared.log("ServiceBrowser initialized")
         startBrowsing()
     }
 
     func startBrowsing() {
+        Logger.shared.log("Starting Bonjour service browsing for type: \(serviceType)")
+
         let parameters = NWParameters()
         parameters.includePeerToPeer = true
 
         browser = NWBrowser(for: .bonjourWithTXTRecord(type: serviceType, domain: nil), using: parameters)
 
         browser?.stateUpdateHandler = { [weak self] newState in
+            guard let self = self else { return }
             switch newState {
             case .ready:
-                print("Browser is ready")
+                Logger.shared.log("Browser is ready", level: .info)
             case .failed(let error):
-                print("Browser failed with error: \(error)")
+                Logger.shared.log("Browser failed with error: \(error)", level: .error)
             case .cancelled:
-                print("Browser cancelled")
-            default:
-                break
+                Logger.shared.log("Browser cancelled", level: .warning)
+            case .waiting(let error):
+                Logger.shared.log("Browser waiting: \(error)", level: .warning)
+            case .setup:
+                Logger.shared.log("Browser setup", level: .debug)
+            @unknown default:
+                Logger.shared.log("Browser unknown state", level: .warning)
             }
         }
 
         browser?.browseResultsChangedHandler = { [weak self] results, changes in
+            Logger.shared.log("Browse results changed. Total results: \(results.count), Changes: \(changes.count)", level: .debug)
             DispatchQueue.main.async {
                 self?.handleBrowseResults(results: results, changes: changes)
             }
         }
 
         browser?.start(queue: .global(qos: .userInitiated))
+        Logger.shared.log("Browser started on background queue")
     }
 
     private func handleBrowseResults(results: Set<NWBrowser.Result>, changes: Set<NWBrowser.Result.Change>) {
@@ -59,6 +69,7 @@ class ServiceBrowser: ObservableObject {
 
     private func addService(from result: NWBrowser.Result) {
         guard case .service(let name, let type, let domain, _) = result.endpoint else {
+            Logger.shared.log("addService: endpoint is not a service", level: .warning)
             return
         }
 
@@ -71,21 +82,32 @@ class ServiceBrowser: ObservableObject {
 
         if !discoveredServices.contains(where: { $0.name == name && $0.domain == domain }) {
             discoveredServices.append(service)
-            print("Service added: \(name)")
+            Logger.shared.log("Service added: \(name) (type: \(type), domain: \(domain))", level: .info)
+        } else {
+            Logger.shared.log("Service already exists: \(name)", level: .debug)
         }
     }
 
     private func removeService(from result: NWBrowser.Result) {
         guard case .service(let name, _, let domain, _) = result.endpoint else {
+            Logger.shared.log("removeService: endpoint is not a service", level: .warning)
             return
         }
 
+        let countBefore = discoveredServices.count
         discoveredServices.removeAll { $0.name == name && $0.domain == domain }
-        print("Service removed: \(name)")
+        let countAfter = discoveredServices.count
+
+        if countBefore > countAfter {
+            Logger.shared.log("Service removed: \(name) (domain: \(domain))", level: .info)
+        } else {
+            Logger.shared.log("Attempted to remove non-existent service: \(name)", level: .debug)
+        }
     }
 
     private func updateService(from result: NWBrowser.Result) {
         guard case .service(let name, let type, let domain, _) = result.endpoint else {
+            Logger.shared.log("updateService: endpoint is not a service", level: .warning)
             return
         }
 
@@ -96,11 +118,14 @@ class ServiceBrowser: ObservableObject {
                 domain: domain,
                 endpoint: result.endpoint
             )
-            print("Service updated: \(name)")
+            Logger.shared.log("Service updated: \(name) (type: \(type), domain: \(domain))", level: .info)
+        } else {
+            Logger.shared.log("Attempted to update non-existent service: \(name)", level: .debug)
         }
     }
 
     deinit {
+        Logger.shared.log("ServiceBrowser deinitialized, cancelling browser")
         browser?.cancel()
     }
 }
