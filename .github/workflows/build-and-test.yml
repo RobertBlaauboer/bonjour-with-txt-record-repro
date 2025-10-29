@@ -1,0 +1,94 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+    - name: Show Xcode version
+      run: xcodebuild -version
+
+    - name: Build app
+      run: |
+        xcodebuild clean build \
+          -project BonjourServiceBrowser.xcodeproj \
+          -scheme BonjourServiceBrowser \
+          -destination 'generic/platform=iOS Simulator' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
+
+    - name: Register _test._tcp service with dns-sd
+      run: |
+        echo "Starting dns-sd service registration..."
+        dns-sd -R "TestService" _test._tcp . 8080 > dns-sd.log 2>&1 &
+        DNS_SD_PID=$!
+        echo "dns-sd started with PID: $DNS_SD_PID"
+        echo "DNS_SD_PID=$DNS_SD_PID" >> $GITHUB_ENV
+        sleep 2
+        echo "dns-sd service registered"
+
+    - name: List available simulators
+      run: xcrun simctl list devices available
+
+    - name: Boot iPhone 16 Pro simulator
+      run: |
+        DEVICE_ID=$(xcrun simctl list devices available | grep "iPhone 16 Pro" | grep -v "Max" | head -n 1 | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+        echo "Found device ID: $DEVICE_ID"
+        echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+
+        # Boot the simulator if not already booted
+        xcrun simctl boot "$DEVICE_ID" || true
+        sleep 5
+
+        # Wait for device to be ready
+        xcrun simctl bootstatus "$DEVICE_ID"
+
+    - name: Install app on simulator
+      run: |
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "BonjourServiceBrowser.app" -type d | head -n 1)
+        echo "Installing app from: $APP_PATH"
+        xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+
+    - name: Launch app on simulator
+      run: |
+        echo "Launching app on device: $DEVICE_ID"
+        xcrun simctl launch "$DEVICE_ID" com.example.BonjourServiceBrowser
+        sleep 5
+        echo "App launched successfully"
+
+    - name: Keep dns-sd service alive and running
+      run: |
+        echo "Checking dns-sd service status..."
+        if ps -p $DNS_SD_PID > /dev/null; then
+          echo "dns-sd service is still running (PID: $DNS_SD_PID)"
+        else
+          echo "Warning: dns-sd service stopped"
+        fi
+        sleep 10
+
+    - name: Show dns-sd logs
+      if: always()
+      run: |
+        if [ -f dns-sd.log ]; then
+          echo "dns-sd logs:"
+          cat dns-sd.log
+        fi
+
+    - name: Shutdown simulator
+      if: always()
+      run: |
+        if [ -n "$DEVICE_ID" ]; then
+          xcrun simctl shutdown "$DEVICE_ID" || true
+        fi
