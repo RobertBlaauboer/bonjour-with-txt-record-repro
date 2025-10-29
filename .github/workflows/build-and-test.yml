@@ -113,6 +113,25 @@ jobs:
           ls -la "$APP_CONTAINER/Documents/" || echo "Documents directory not found"
         fi
 
+    - name: Check if services were discovered
+      run: |
+        APP_CONTAINER=$(xcrun simctl get_app_container "$DEVICE_ID" com.example.BonjourServiceBrowser data)
+        LOG_FILE="$APP_CONTAINER/Documents/bonjour_service_browser.log"
+
+        if [ ! -f "$LOG_FILE" ]; then
+          echo "ERROR: Log file not found"
+          exit 1
+        fi
+
+        if grep -q "Service added:" "$LOG_FILE"; then
+          echo "SUCCESS: Services were discovered"
+          grep "Service added:" "$LOG_FILE"
+        else
+          echo "FAILURE: No services were discovered"
+          echo "Expected to find 'Service added:' in logs but found none"
+          exit 1
+        fi
+
     - name: Show dns-sd logs
       if: always()
       run: |
