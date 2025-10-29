@@ -66,10 +66,18 @@ jobs:
         echo "Installing app from: $APP_PATH"
         xcrun simctl install "$DEVICE_ID" "$APP_PATH"
 
+    - name: Set environment variable in simulator
+      run: |
+        echo "Setting BROWSER_TYPE=${{ matrix.browser-type }} in simulator"
+        xcrun simctl spawn "$DEVICE_ID" launchctl setenv BROWSER_TYPE "${{ matrix.browser-type }}"
+        # Restart SpringBoard to pick up the environment variable
+        xcrun simctl spawn "$DEVICE_ID" launchctl stop com.apple.SpringBoard
+        sleep 2
+
     - name: Launch app on simulator
       run: |
         echo "Launching app on device: $DEVICE_ID (browser type: ${{ matrix.browser-type }})"
-        xcrun simctl launch --terminate-running-process "$DEVICE_ID" com.example.BonjourServiceBrowser BROWSER_TYPE "${{ matrix.browser-type }}"
+        xcrun simctl launch "$DEVICE_ID" com.example.BonjourServiceBrowser
         sleep 5
         echo "App launched successfully"
 

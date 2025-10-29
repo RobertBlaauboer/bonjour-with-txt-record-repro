@@ -19,7 +19,10 @@ class ServiceBrowser: ObservableObject {
         let parameters = NWParameters()
         parameters.includePeerToPeer = true
 
+        // SWITCH BETWEEN BROWSER TYPES HERE
+        // Can be controlled via BROWSER_TYPE environment variable: "bonjour" or "bonjourWithTXTRecord"
         let browserTypeEnv = ProcessInfo.processInfo.environment["BROWSER_TYPE"] ?? "bonjourWithTXTRecord"
+        Logger.shared.log("BROWSER_TYPE environment variable: '\(browserTypeEnv)'", level: .info)
         let useBonjourWithTXTRecord = (browserTypeEnv == "bonjourWithTXTRecord")
 
         let descriptor: NWBrowser.Descriptor
