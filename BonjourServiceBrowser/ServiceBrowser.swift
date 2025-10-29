@@ -19,7 +19,19 @@ class ServiceBrowser: ObservableObject {
         let parameters = NWParameters()
         parameters.includePeerToPeer = true
 
-        browser = NWBrowser(for: .bonjourWithTXTRecord(type: serviceType, domain: nil), using: parameters)
+        let browserTypeEnv = ProcessInfo.processInfo.environment["BROWSER_TYPE"] ?? "bonjourWithTXTRecord"
+        let useBonjourWithTXTRecord = (browserTypeEnv == "bonjourWithTXTRecord")
+
+        let descriptor: NWBrowser.Descriptor
+        if useBonjourWithTXTRecord {
+            descriptor = .bonjourWithTXTRecord(type: serviceType, domain: nil)
+            Logger.shared.log("Using .bonjourWithTXTRecord", level: .info)
+        } else {
+            descriptor = .bonjour(type: serviceType, domain: nil)
+            Logger.shared.log("Using .bonjour", level: .info)
+        }
+
+        browser = NWBrowser(for: descriptor, using: parameters)
 
         browser?.stateUpdateHandler = { [weak self] newState in
             guard let self = self else { return }

@@ -9,6 +9,9 @@ on:
 jobs:
   build-and-test:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        browser-type: [bonjour, bonjourWithTXTRecord]
 
     steps:
     - name: Checkout code
@@ -21,6 +24,8 @@ jobs:
       run: xcodebuild -version
 
     - name: Build app
+      env:
+        BROWSER_TYPE: ${{ matrix.browser-type }}
       run: |
         xcodebuild clean build \
           -project BonjourServiceBrowser.xcodeproj \
@@ -63,8 +68,8 @@ jobs:
 
     - name: Launch app on simulator
       run: |
-        echo "Launching app on device: $DEVICE_ID"
-        xcrun simctl launch "$DEVICE_ID" com.example.BonjourServiceBrowser
+        echo "Launching app on device: $DEVICE_ID (browser type: ${{ matrix.browser-type }})"
+        xcrun simctl launch --terminate-running-process "$DEVICE_ID" com.example.BonjourServiceBrowser BROWSER_TYPE "${{ matrix.browser-type }}"
         sleep 5
         echo "App launched successfully"
 
@@ -113,7 +118,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: app-logs
+        name: app-logs-${{ matrix.browser-type }}
         path: |
           logs/
           dns-sd.log
